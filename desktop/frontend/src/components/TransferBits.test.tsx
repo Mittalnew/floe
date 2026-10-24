@@ -9,7 +9,7 @@ import {useState} from 'react';
 import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it} from 'vitest';
-import {FileSummary, ProgressRow} from './TransferBits';
+import {FileSummary, ProgressRow, StatusLine} from './TransferBits';
 
 // A top-level component, not one declared inside a test body, so the harness
 // cannot remount what it is testing.
@@ -78,5 +78,47 @@ describe('ProgressRow', () => {
 
         expect(screen.getByRole('progressbar', {name: 'a.txt - 0%'}).getAttribute('aria-valuenow')).toBe('0');
         expect(screen.getByRole('progressbar', {name: 'b.png - 100%'}).getAttribute('aria-valuenow')).toBe('100');
+    });
+});
+
+// StatusLine is the line under the send and receive cards. friendlyError
+// (errors.ts) starts every failure with 'Error: ', which is what makes a line
+// an error; this is the one it returns when the other person never connects.
+const FAILED = 'Error: Both people need Floe open at the same time';
+
+describe('StatusLine', () => {
+    it('announces a failed send or receive as an alert', () => {
+        render(<StatusLine text={FAILED} busy={false}/>);
+
+        expect(screen.getByRole('alert').textContent).toBe(FAILED);
+    });
+
+    it('mounts a new alert when a busy line turns into an error', () => {
+        const {container, rerender} = render(<StatusLine text="Setting up..." busy/>);
+        const busyLine = container.querySelector('p');
+        expect(screen.queryByRole('alert')).toBeNull();
+
+        rerender(<StatusLine text={FAILED} busy={false}/>);
+        const errorLine = screen.getByRole('alert');
+        expect(errorLine.textContent).toBe(FAILED);
+        expect(errorLine).not.toBe(busyLine);
+    });
+
+    it('gives a line that is not an error no role', () => {
+        render(<StatusLine text="Sending..." busy/>);
+
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('keeps the Settings test line one polite status region, an error included', () => {
+        const {rerender} = render(<StatusLine text="" busy={false} live/>);
+        const region = screen.getByRole('status');
+
+        rerender(<StatusLine text={FAILED} busy={false} live/>);
+        expect(screen.getByRole('status')).toBe(region);
+        expect(region.getAttribute('aria-live')).toBe('polite');
+        expect(region.textContent).toBe(FAILED);
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 });

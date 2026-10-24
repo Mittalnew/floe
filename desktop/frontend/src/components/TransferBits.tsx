@@ -58,13 +58,21 @@ export function ProgressRow({prog}: {prog: {pct: number; label: string}}) {
  *  costs a permanently reserved 20px. That is right for the Settings server test,
  *  where the result arrives seconds later and is the entire point of pressing the
  *  button, and wrong for the send and receive lines, which sit in tight layouts and
- *  should collapse to nothing when idle. */
+ *  should collapse to nothing when idle.
+ *
+ *  Without `live`, an error line is an alert instead, so a failed send or receive
+ *  is still announced. A screen reader announces an alert that is inserted with its
+ *  text already inside, so it reserves no space. The key gives the alert an element
+ *  of its own: a line that turns into an error ("Setting up..." to "Error: ...")
+ *  mounts fresh instead of gaining the role in place. */
 export function StatusLine({text, busy, live}: {text: string; busy: boolean; live?: boolean}) {
     if (!text && !live) return null;
     const isError = text.startsWith('Error');
+    const isAlert = isError && !live;
     return (
         <p
-            {...(live ? {role: 'status' as const, 'aria-live': 'polite' as const} : {})}
+            key={isAlert ? 'alert' : 'line'}
+            {...(live ? {role: 'status' as const, 'aria-live': 'polite' as const} : isAlert ? {role: 'alert' as const} : {})}
             className={cn('flex min-h-5 items-center justify-center gap-2 text-center text-xs', isError ? 'text-red-400' : 'text-zinc-500')}
         >
             {busy && <Loader2 className="size-3.5 shrink-0 animate-spin"/>}
