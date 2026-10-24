@@ -1855,6 +1855,8 @@ function App() {
 
     const modeBtn = (m: Mode, label: string) => (
         <button
+            type="button"
+            aria-pressed={mode === m}
             onClick={() => setMode(m)}
             aria-describedby={m === 'receive' && receiveDescribed ? RECEIVE_DESCRIPTION_ID : undefined}
             className={cn(
@@ -2448,6 +2450,8 @@ function App() {
                                             <div className="flex gap-4 px-0.5">
                                                 {(['files', 'text'] as const).map((k) => (
                                                     <button
+                                                        type="button"
+                                                        aria-pressed={sendKind === k}
                                                         key={k}
                                                         // The active tab is where focus lands if the undo
                                                         // bar goes while the keyboard is on it, so exactly
